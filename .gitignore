@@ -1,0 +1,6 @@
+.vscode/
+node_modules/
+*.zip
+out
+.DS_Store
+_test.js
