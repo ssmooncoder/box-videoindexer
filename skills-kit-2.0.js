@@ -483,7 +483,7 @@ SkillsWriter.prototype.createMetadataCard = function createMetadataCard(
         type: SKILLS_METADATA_CARD_TYPE, // skill_card
         skill: {
             type: SKILLS_SERVICE_TYPE, // service
-            id: this.skillId
+            id: `${this.skillId}` // Samuel Moon: This needs to be a string for some reason. Maybe their API changed recently?
         },
         skill_card_type: type,
         skill_card_title: {

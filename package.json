@@ -1,12 +1,12 @@
 {
   "name": "samuel-moon-box",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "dependencies": {
     "aws-serverless-express": "^3.3.6",
     "box-node-sdk": "^1.30.0",
     "express": "^4.17.1",
+    "jest": "^24.9.0",
     "jimp": "^0.9.3",
     "lodash": "^4.17.15",
     "path": "^0.12.7",
@@ -15,9 +15,10 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "zip -r function.zip . -x \".vscode/*\" && aws lambda update-function-code --function-name my-function --zip-file fileb://function.zip",
+    "deploy": "zip -r function.zip . -x \".vscode/*\" -x \"_test*\" && aws lambda update-function-code --function-name my-function --zip-file fileb://function.zip",
     "invoke": "aws lambda invoke --function-name my-function invoke_response --log-type Tail --query 'LogResult' --output text | base64 -D"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "description": ""
 }
