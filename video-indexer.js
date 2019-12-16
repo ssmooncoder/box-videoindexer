@@ -10,6 +10,7 @@ function VideoIndexer(apiGateway) {
     this.location = "trial"; // Trial VideoIndexer accounts has its own location.
     this.accountId = "83d244e8-13f2-4d39-acfe-dfa51111d4b9"; // Your VideoIndexer account ID
     this.authKey = "88a5565a8d44418d9f8ff87cc757da78"; // API key for VideoIndexer
+    this.authKey2 = "b4e5b8b5df3b4e8c80f52b1fc8e8e9db"; // API key for VideoIndexer
     this.hostname = "api.videoindexer.ai";
     this.accessToken = "";
 }
@@ -32,6 +33,7 @@ VideoIndexer.prototype.upload = async function (fileName, fileUrl) {
 
     return new Promise((resolve, reject) => {
         const request = https.request(options, (result) => {
+            console.log(result);
             console.log('statusCode:', result.statusCode);
             console.log('headers:', result.headers);
             resolve("Success: Upload Video");
@@ -68,6 +70,7 @@ VideoIndexer.prototype.getToken = async function () {
 
     return new Promise((resolve, reject) => {
         const request = https.get(options, (result) => {
+            console.log(result);
             console.log('statusCode:', result.statusCode);
             console.log('headers:', result.headers);
     
