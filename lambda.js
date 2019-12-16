@@ -1,8 +1,12 @@
 /**
  * Samuel Moon
  * 
- * Notes: Environment variables are set on the lambda configuration page.
- * API Gateway URL set on process.env.APIGATEWAY
+ * Notes:
+ * 1. Environment variables are set on the lambda configuration page.
+ *    API Gateway URL set on process.env.APIGATEWAY
+ * 2. Timeout is set at 15 minutes (can be increased) or need to find
+ *    a way to store FileContext object for stateless calls.
+ *    One way would be to use S3 to store the object as a json.
  */
 
 'use strict';
@@ -10,6 +14,13 @@ const { FilesReader, SkillsWriter, SkillsErrorEnum } = require('./skills-kit-2.0
 const VideoIndexer = require("./video-indexer");
 
 module.exports.handler = async (event, context, callback) => {
+
+    if (event && event.queryStringParameters && event.queryStringParameters.state === "Processed") {
+        console.debug(`VideoIndexer finished processing event received: ${JSON.stringify(event)}`);
+
+        const videoId = event.queryStringParameters.id;
+        
+    }
     console.debug(`Box event received: ${JSON.stringify(event)}`);
     console.debug(process.env.APIGATEWAY);
     const videoIndexer = new VideoIndexer(process.env.APIGATEWAY);

@@ -21,23 +21,28 @@ function VideoIndexer(apiGateway) {
  * https://api-portal.videoindexer.ai/docs/services/Operations/operations/Upload-Video?
  */
 VideoIndexer.prototype.upload = async function (fileName, fileUrl) {
-    console.log(this.accessToken);
     const options = {
         host: this.hostname,
-        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}?privacy=Public&callbackUrl=${this.apiGateway}&videoUrl=${fileUrl}`,
+        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}&privacy=Public&callbackUrl=${this.apiGateway}&videoUrl=${fileUrl}&accessToken=${this.accessToken}`,
         method: "POST",
-        headers: {
-            "Authorization": `Bearer ${this.accessToken}`
-        }
-    };
+        // headers: {
+            //     "Authorization": `Bearer%20${this.accessToken}`
+            // }
+        };
 
     return new Promise((resolve, reject) => {
+        console.log(this.accessToken);
+
         const request = https.request(options, (result) => {
-            console.log(result);
             console.log('statusCode:', result.statusCode);
             console.log('headers:', result.headers);
-            resolve("Success: Upload Video");
+
+            if (result.statusCode === 200) {
+                
+                resolve("Success: Upload Video");
+            }
         });
+
         request.on('error', (e) => {
             console.error(e);
             reject(e);
@@ -52,7 +57,7 @@ VideoIndexer.prototype.upload = async function (fileName, fileUrl) {
  * 
  */
 VideoIndexer.prototype.getMetadata = function () {
-
+    
 }
 
 /**
@@ -81,6 +86,8 @@ VideoIndexer.prototype.getToken = async function () {
     
             result.on("end", () => {
                 data = Buffer.concat(data).toString();
+                data = data.substring(1, data.length-1); // Wasted like 6 hours on this because token is wrapped in "double quote" characters
+                // Need to find out what's causing the encoding issue that inserts double quotes around the token
                 this.accessToken = data;
                 console.log(this.accessToken);
                 resolve("Success: Authorization Token");
@@ -91,6 +98,8 @@ VideoIndexer.prototype.getToken = async function () {
             console.error(e);
             reject(e);
         });
+
+        request.end();
     });
 };
 
