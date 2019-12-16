@@ -57,7 +57,7 @@ VideoIndexer.prototype.upload = async function (fileName, fileUrl) {
 /**
  * Access token will be required for private videos.
  */
-VideoIndexer.prototype.getMetadata = async function (videoId) {
+VideoIndexer.prototype.getData = async function (videoId) {
     const options = {
         host: this.hostname,
         path: `/${this.location}/Accounts/${this.accountId}/Videos/${videoId}/Index`,

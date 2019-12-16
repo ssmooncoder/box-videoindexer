@@ -12,6 +12,7 @@
 'use strict';
 const { FilesReader, SkillsWriter, SkillsErrorEnum } = require('./skills-kit-2.0');
 const VideoIndexer = require("./video-indexer");
+// const cloneDeep = require("lodash/cloneDeep"); // For deep cloning json objects
 
 /**
  * Variables declared outside the handler is cached to be reused between invocation.
@@ -24,15 +25,23 @@ let skillsWriter;
 let videoIndexer;
 
 module.exports.handler = async (event, context, callback) => {
-
+    // If block after VideoIndexer finishes processing uploaded file.
     if (event && event.queryStringParameters && event.queryStringParameters.state === "Processed") {
         console.debug(`VideoIndexer finished processing event received: ${JSON.stringify(event)}`);
 
         const videoId = event.queryStringParameters.id;
-        const indexerData = await videoIndexer.getMetaData(videoId);
-        console.log(indexerData);
-        console.log(fileContext);
-        return
+        const indexerData = await videoIndexer.getData(videoId); // Can create skill cards after data extraction
+
+        let keywords = [];
+        indexerData.summarizedInsights.keywords.forEach(kw => {
+            keywords.push({
+                text: kw.name,
+                appears: [
+                    {start: kw.appearances.startSeconds},
+                    {end: kw.appearances.endSeconds}
+                ]
+            })
+        });
     }
     else {
         console.debug(`Box event received: ${JSON.stringify(event)}`);
@@ -40,15 +49,14 @@ module.exports.handler = async (event, context, callback) => {
     
         // instantiate your two skill development helper tools
         filesReader = new FilesReader(event.body);
-        skillsWriter = new SkillsWriter(fileContext);
         fileContext = filesReader.getFileContext();
+        skillsWriter = new SkillsWriter(fileContext);
         
         await skillsWriter.saveProcessingCard();
     
         await videoIndexer.getToken();
         await videoIndexer.upload(filesReader.fileName, filesReader.fileDownloadURL); // Will POST a success when it's done indexing.
     }
-
     /*
     try {
         // One of six ways of accessing file content from Box for ML processing with FilesReader
