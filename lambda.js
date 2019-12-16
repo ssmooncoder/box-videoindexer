@@ -39,10 +39,10 @@ module.exports.handler = async (event, context, callback) => {
     let keywords = [];
     indexerData.summarizedInsights.keywords.forEach(kw => {
         keywords.push({
-            text: kw.name,
-            appears: [
-                {start: kw.appearances.startSeconds},
-                {end: kw.appearances.endSeconds}
+            "text": kw.name,
+            "appears": [
+                {"start": kw.appearances.startSeconds},
+                {"end": kw.appearances.endSeconds}
             ]
         })
     });
