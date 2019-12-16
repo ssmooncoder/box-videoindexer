@@ -32,7 +32,8 @@ module.exports.handler = async (event, context, callback) => {
     fileContext = filesReader.getFileContext();
     skillsWriter = new SkillsWriter(fileContext);
 
-    const videoId = event.queryStringParameters.id;
+    // const videoId = event.queryStringParameters.id;
+    const videoId = "fca224947b";
     const indexerData = await videoIndexer.getData(videoId); // Can create skill cards after data extraction
 
     let keywords = [];
