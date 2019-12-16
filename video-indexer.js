@@ -58,6 +58,7 @@ VideoIndexer.prototype.upload = async function (fileName, fileUrl) {
  * Access token will be required for private videos.
  */
 VideoIndexer.prototype.getData = async function (videoId) {
+    VideoIndexer.prototype.videoId = videoId; // Add as property for face thumbnail images
     const options = {
         host: this.hostname,
         path: `/${this.location}/Accounts/${this.accountId}/Videos/${videoId}/Index`,
@@ -90,6 +91,15 @@ VideoIndexer.prototype.getData = async function (videoId) {
 
         request.end();
     });
+}
+
+/**
+ * Builds the URI for thumbnails stored on VideoIndexer
+ * No async because we already have the thumbnail IDs locally.
+ * Need to implement tokens for private videos
+ */
+VideoIndexer.prototype.getFace = function (id) {
+    return `https://api.videoindexer.ai/${this.location}/Accounts/${this.accountId}/Videos/${this.videoId}/Thumbnails/${id}`;
 }
 
 /**
@@ -135,4 +145,9 @@ VideoIndexer.prototype.getToken = async function () {
     });
 };
 
-module.exports = VideoIndexer;
+function ConvertTime(hhmmss) {
+    const time = hhmmss.split(":");
+    return time[0] * 3600.0 + time[1] * 60.0 + time[2] * 1.0;
+}
+
+module.exports = {VideoIndexer, ConvertTime};

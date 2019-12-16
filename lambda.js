@@ -11,7 +11,7 @@
 
 'use strict';
 const { FilesReader, SkillsWriter, SkillsErrorEnum } = require('./skills-kit-2.0');
-const VideoIndexer = require("./video-indexer");
+const {VideoIndexer, ConvertTime} = require("./video-indexer");
 // const cloneDeep = require("lodash/cloneDeep"); // For deep cloning json objects
 
 /**
@@ -31,17 +31,52 @@ module.exports.handler = async (event, context, callback) => {
 
         const videoId = event.queryStringParameters.id;
         const indexerData = await videoIndexer.getData(videoId); // Can create skill cards after data extraction
+                                                                // This method also stores videoId for future use.
 
+        const cards = [];
+
+        let fileDuration = indexerData.summarizedInsights.duration.seconds;
+
+        // Keywords
         let keywords = [];
         indexerData.summarizedInsights.keywords.forEach(kw => {
             keywords.push({
                 text: kw.name,
-                appears: [
-                    {start: kw.appearances.startSeconds},
-                    {end: kw.appearances.endSeconds}
-                ]
+                appears: kw.appearances.map(time => {
+                    return {start: time.startSeconds, end: time.endSeconds};
+                    // return {start: time.startSeconds, end: time.endSeconds};
+                })
             })
         });
+        console.log(keywords);
+        cards.push(skillsWriter.createTopicsCard(keywords, fileDuration));
+
+        // Transcripts
+        let transcripts = [];
+        indexerData.videos[0].insights.transcript.forEach(tr => {
+            transcripts.push({
+                text: tr.text,
+                appears: tr.instances.map(time => {
+                    return {start: ConvertTime(time.start), end: ConvertTime(time.end)};
+                })
+            })
+        })
+        console.log(transcripts);
+        cards.push(skillsWriter.createTranscriptsCard(transcripts, fileDuration));
+
+        // Faces
+        let faces = [];
+        indexerData.videos[0].insights.faces.forEach(fa => {
+            faces.push({
+                text: fa.name,
+                image_url: videoIndexer.getFace(fa.thumbnailId)
+            })
+        });
+        console.log(faces);
+        cards.push(await skillsWriter.createFacesCard(faces));
+
+        await skillsWriter.saveDataCards(cards);
+        callback(null, { statusCode: 200, body: "Box skill metadata finished writing." });
     }
     else {
         console.debug(`Box event received: ${JSON.stringify(event)}`);
