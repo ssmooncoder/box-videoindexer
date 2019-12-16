@@ -3,6 +3,8 @@ const https = require("https"); // Low level API for HTTPS request/response
 
 /**
  * @param {*} apiGateway - Used for callback when uploaded video indexing is finished.
+ * 
+ * Methods are wrapped in promises for async implmentation.
  */
 
 function VideoIndexer(apiGateway) {
@@ -38,7 +40,6 @@ VideoIndexer.prototype.upload = async function (fileName, fileUrl) {
             console.log('headers:', result.headers);
 
             if (result.statusCode === 200) {
-                
                 resolve("Success: Upload Video");
             }
         });
@@ -54,10 +55,41 @@ VideoIndexer.prototype.upload = async function (fileName, fileUrl) {
 };
 
 /**
- * 
+ * Access token will be required for private videos.
  */
-VideoIndexer.prototype.getMetadata = function () {
-    
+VideoIndexer.prototype.getMetadata = async function (videoId) {
+    const options = {
+        host: this.hostname,
+        path: `/${this.location}/Accounts/${this.accountId}/Videos/${videoId}/Index`,
+        headers: {
+            "Accept": "application/json"
+        }
+    }
+
+    return new Promise((resolve, reject) => {
+        const request = https.get(options, (result) => {
+            console.log('statusCode:', result.statusCode);
+            console.log('headers:', result.headers);
+
+            let data = []
+            result.on("data", (d) => {
+                data.push(d);
+            });
+
+            result.on("end", () => {
+                data = JSON.parse(Buffer.concat(data));
+                resolve(data);
+            });
+
+        });
+
+        request.on('error', (e) => {
+            console.error(e);
+            reject(e);
+        });
+
+        request.end();
+    });
 }
 
 /**

@@ -13,27 +13,43 @@
 const { FilesReader, SkillsWriter, SkillsErrorEnum } = require('./skills-kit-2.0');
 const VideoIndexer = require("./video-indexer");
 
+/**
+ * Variables declared outside the handler is cached to be reused between invocation.
+ * fileContext object is preserved to use the write tokens when the proxy endpoint
+ * calls the handler after video processing is done.
+ */
+let fileContext;
+let filesReader;
+let skillsWriter;
+let videoIndexer;
+
 module.exports.handler = async (event, context, callback) => {
 
     if (event && event.queryStringParameters && event.queryStringParameters.state === "Processed") {
         console.debug(`VideoIndexer finished processing event received: ${JSON.stringify(event)}`);
 
         const videoId = event.queryStringParameters.id;
-        
+        const indexerData = await videoIndexer.getMetaData(videoId);
+        console.log(indexerData);
+        console.log(fileContext);
+        return
     }
-    console.debug(`Box event received: ${JSON.stringify(event)}`);
-    console.debug(process.env.APIGATEWAY);
-    const videoIndexer = new VideoIndexer(process.env.APIGATEWAY);
-
-    // instantiate your two skill development helper tools
-    const filesReader = new FilesReader(event.body);
-    const skillsWriter = new SkillsWriter(filesReader.getFileContext());
+    else {
+        console.debug(`Box event received: ${JSON.stringify(event)}`);
+        videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
     
-    await skillsWriter.saveProcessingCard();
+        // instantiate your two skill development helper tools
+        filesReader = new FilesReader(event.body);
+        skillsWriter = new SkillsWriter(fileContext);
+        fileContext = filesReader.getFileContext();
+        
+        await skillsWriter.saveProcessingCard();
+    
+        await videoIndexer.getToken();
+        await videoIndexer.upload(filesReader.fileName, filesReader.fileDownloadURL); // Will POST a success when it's done indexing.
+    }
 
-    await videoIndexer.getToken();
-    await videoIndexer.upload(filesReader.fileName, filesReader.fileDownloadURL); // Will POST a success when it's done indexing.
-
+    /*
     try {
         // One of six ways of accessing file content from Box for ML processing with FilesReader
         // ML processing code not shown here, and will need to be added by the skill developer.
@@ -90,4 +106,5 @@ module.exports.handler = async (event, context, callback) => {
         // that you can apply to make sure your service always responds within time.
         callback(null, { statusCode: 200, body: 'Box event was processed by skill' });
     }
+    */
 };
