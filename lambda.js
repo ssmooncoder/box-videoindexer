@@ -48,7 +48,7 @@ module.exports.handler = async (event, context, callback) => {
     });
 
     const cards = [];
-    cards.push(skillsWriter.createTopicsCard(mockListOfDiscoveredKeywords));
+    cards.push(skillsWriter.createTopicsCard(keywords));
     await skillsWriter.saveDataCards(cards);
     callback(null, { statusCode: 200, body: 'Box event was processed by skill' });
     /*
