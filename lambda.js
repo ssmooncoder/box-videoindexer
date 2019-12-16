@@ -1,24 +1,37 @@
+/**
+ * Samuel Moon
+ * 
+ * Notes: Environment variables are set on the lambda configuration page.
+ * API Gateway URL set on process.env.APIGATEWAY
+ */
+
 'use strict';
 const { FilesReader, SkillsWriter, SkillsErrorEnum } = require('./skills-kit-2.0');
+const VideoIndexer = require("./video-indexer");
 
 module.exports.handler = async (event, context, callback) => {
     console.debug(`Box event received: ${JSON.stringify(event)}`);
+    console.debug(process.env.APIGATEWAY);
+    const videoIndexer = new VideoIndexer(process.env.APIGATEWAY);
 
     // instantiate your two skill development helper tools
     const filesReader = new FilesReader(event.body);
     const skillsWriter = new SkillsWriter(filesReader.getFileContext());
     
-    console.debug("~~~ wtf man ~~~ 1 ~~~")
     await skillsWriter.saveProcessingCard();
-    console.debug("~~~ wtf man ~~~ 2 ~~~")
-    
+
+    await videoIndexer.getToken();
+    await videoIndexer.upload(filesReader.fileName, filesReader.fileDownloadURL); // Will POST a success when it's done indexing.
+
     try {
         // One of six ways of accessing file content from Box for ML processing with FilesReader
         // ML processing code not shown here, and will need to be added by the skill developer.
-        console.debug("~~~ wtf man ~~~ 3 ~~~")
         const base64File = await filesReader.getContentBase64(); // eslint-disable-line no-unused-vars
         console.log(`printing simplified format file content in base64 encoding: ${base64File}`);
+
         
+
+
         const mockListOfDiscoveredKeywords = [{ text: 'testing' }, { text: 'senior' }, { text: 'design' }];
         const mockListOfDiscoveredTranscripts = [{ text: `This is a sentence/transcript card` }];
         const mockListOfDiscoveredFaceWithPublicImageURI = [
@@ -41,12 +54,10 @@ module.exports.handler = async (event, context, callback) => {
         // Turn your data into correctly formatted card jsons usking SkillsWriter.
         // The cards will appear in UI in same order as they are passed in a list.
         const cards = [];
-        console.debug("~~~ wtf man ~~~ 4 ~~~")
         cards.push(await skillsWriter.createFacesCard(mockListOfDiscoveredFaceWithPublicImageURI, null, 'Icons')); // changing card title to non-default 'Icons'.
         cards.push(skillsWriter.createTopicsCard(mockListOfDiscoveredKeywords));
         cards.push(skillsWriter.createTranscriptsCard(mockListOfDiscoveredTranscripts));
         cards.push(skillsWriter.createTranscriptsCard(mockListOfTranscriptsWithAppearsAtForPlaybackFiles, 5)); // for timeline total playtime seconds of file also needs to be passed.
-        console.debug("~~~ wtf man ~~~ 5 ~~~")
         
         // Save the cards to Box in a single calls to show in UI.
         // Incase the skill is invoked on a new version upload of the same file,
