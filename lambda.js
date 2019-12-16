@@ -11,7 +11,7 @@
 
 'use strict';
 const { FilesReader, SkillsWriter, SkillsErrorEnum } = require('./skills-kit-2.0');
-const VideoIndexer = require("./video-indexer");
+const {VideoIndexer, ConvertTime} = require("./video-indexer");
 // const cloneDeep = require("lodash/cloneDeep"); // For deep cloning json objects
 
 /**
@@ -36,22 +36,50 @@ module.exports.handler = async (event, context, callback) => {
     const videoId = "fca224947b";
     const indexerData = await videoIndexer.getData(videoId); // Can create skill cards after data extraction
 
+    const cards = [];
+
+    let fileDuration = indexerData.summarizedInsights.duration.seconds;
+
+    // Keywords
     let keywords = [];
     indexerData.summarizedInsights.keywords.forEach(kw => {
         keywords.push({
-            "text": kw.name,
-            "appears": [{
-                "start": kw.appearances.startSeconds,
-                "end": kw.appearances.endSeconds
-            }]
+            text: kw.name,
+            appears: kw.appearances.map(time => {
+                return {start: time.startSeconds, end: time.endSeconds};
+                // return {start: time.startSeconds, end: time.endSeconds};
+            })
         })
     });
 
-    const cards = [];
-    cards.push(skillsWriter.createTopicsCard(keywords));
+    cards.push(skillsWriter.createTopicsCard(keywords, fileDuration));
+
+    console.log(keywords);
+
+    // Transcripts
+    let transcripts = [];
+    indexerData.videos[0].insights.transcript.forEach(tr => {
+        transcripts.push({
+            text: tr.text,
+            appears: tr.instances.map(time => {
+                return {start: ConvertTime(time.start), end: ConvertTime(time.end)};
+            })
+        })
+    })
+
+    console.log(transcripts);
+    cards.push(skillsWriter.createTranscriptsCard(transcripts, fileDuration));
+
+
+    // Faces
+    let faces = [];
+    indexerData.videos[0].insights.faces.forEach(fa => {
+        faces.push({
+            
+        })
+    });
     await skillsWriter.saveDataCards(cards);
     callback(null, { statusCode: 200, body: 'Box event was processed by skill' });
-    /*
         // instantiate your two skill development helper tools
         
         // await skillsWriter.saveProcessingCard();
@@ -114,5 +142,4 @@ module.exports.handler = async (event, context, callback) => {
         // that you can apply to make sure your service always responds within time.
         callback(null, { statusCode: 200, body: 'Box event was processed by skill' });
     }
-    */
 };

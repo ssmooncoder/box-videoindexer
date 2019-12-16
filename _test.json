@@ -1,0 +1,14 @@
+[
+    {
+        text: 'sentence1',
+        appears: [{
+            start: 0.0,
+            end: 1.0}
+        ]
+    },
+    { text: 'sentence2', appears: [
+            { start: 1.0, end: 2.0
+            }
+        ]
+    }
+]
