@@ -26,38 +26,38 @@ let videoIndexer;
 
 module.exports.handler = async (event, context, callback) => {
     // If block after VideoIndexer finishes processing uploaded file.
-    if (event && event.queryStringParameters && event.queryStringParameters.state === "Processed") {
-        console.debug(`VideoIndexer finished processing event received: ${JSON.stringify(event)}`);
+    console.debug(`VideoIndexer finished processing event received: ${JSON.stringify(event)}`);
+    videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
+    filesReader = new FilesReader(event.body);
+    fileContext = filesReader.getFileContext();
+    skillsWriter = new SkillsWriter(fileContext);
 
-        const videoId = event.queryStringParameters.id;
-        const indexerData = await videoIndexer.getData(videoId); // Can create skill cards after data extraction
+    const videoId = event.queryStringParameters.id;
+    const indexerData = await videoIndexer.getData(videoId); // Can create skill cards after data extraction
 
-        let keywords = [];
-        indexerData.summarizedInsights.keywords.forEach(kw => {
-            keywords.push({
-                text: kw.name,
-                appears: [
-                    {start: kw.appearances.startSeconds},
-                    {end: kw.appearances.endSeconds}
-                ]
-            })
-        });
-    }
-    else {
-        console.debug(`Box event received: ${JSON.stringify(event)}`);
-        videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
-    
-        // instantiate your two skill development helper tools
-        filesReader = new FilesReader(event.body);
-        fileContext = filesReader.getFileContext();
-        skillsWriter = new SkillsWriter(fileContext);
-        
-        await skillsWriter.saveProcessingCard();
-    
-        await videoIndexer.getToken();
-        await videoIndexer.upload(filesReader.fileName, filesReader.fileDownloadURL); // Will POST a success when it's done indexing.
-    }
+    let keywords = [];
+    indexerData.summarizedInsights.keywords.forEach(kw => {
+        keywords.push({
+            text: kw.name,
+            appears: [
+                {start: kw.appearances.startSeconds},
+                {end: kw.appearances.endSeconds}
+            ]
+        })
+    });
+
+    const cards = [];
+    cards.push(skillsWriter.createTopicsCard(mockListOfDiscoveredKeywords));
+    await skillsWriter.saveDataCards(cards);
+    callback(null, { statusCode: 200, body: 'Box event was processed by skill' });
     /*
+        // instantiate your two skill development helper tools
+        
+        // await skillsWriter.saveProcessingCard();
+    
+        // await videoIndexer.getToken();
+        // await videoIndexer.upload(filesReader.fileName, filesReader.fileDownloadURL); // Will POST a success when it's done indexing.
+    }
     try {
         // One of six ways of accessing file content from Box for ML processing with FilesReader
         // ML processing code not shown here, and will need to be added by the skill developer.
@@ -97,7 +97,6 @@ module.exports.handler = async (event, context, callback) => {
         // Save the cards to Box in a single calls to show in UI.
         // Incase the skill is invoked on a new version upload of the same file,
         // this call will override any existing skills cards, data or error, on Box file preview.
-        console.log(`cards ${JSON.stringify(cards)}`);
         await skillsWriter.saveDataCards(cards);
         console.debug("~~~ wtf man ~~~ 6 ~~~")
     } catch (error) {
