@@ -40,10 +40,10 @@ module.exports.handler = async (event) => {
 
         let bucketData = await s3.getObject(params).promise();
         console.log(bucketData);
-        let fileContext = JSON.parse(bucketData.body.toString);
-        let fileContext2 = JSON.parse(bucketData.body.toString());
+
+        // "Body" is capital "B", not lowercase like "body".
+        let fileContext = bucketData.Body.toString();
         console.log(fileContext);
-        console.log(fileContext2);
 
         let skillsWriter = new SkillsWriter(fileContext);
 
