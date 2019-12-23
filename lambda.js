@@ -1,41 +1,30 @@
 /**
  * Samuel Moon
  * 
- * Notes:
+ * Notes (update 12/23/19):
  * 1. Environment variables are set on the lambda configuration page.
  *    API Gateway URL set on process.env.APIGATEWAY
- * 2. Timeout is set at 15 minutes (can be increased) or need to find
- *    a way to store FileContext object for stateless calls.
- *    One way would be to use S3 to store the object as a json.
+ * 2. Timeout is set at 15 minutes. Storing JSON outside handler or in
+ *    the /tmp/ directory is unreliable, as they are reliant on Lambda's
+ *    execution context.
+ * 3. Execution context is garbage collected on videos that take a long
+ *    time to process. Will need to use S3 to store fileContext JSON.
  */
 
 'use strict';
 const { FilesReader, SkillsWriter, SkillsErrorEnum } = require("./skills-kit-2.0");
-const fs = require("fs"); // Only for writing JSON files. Use "require()" to read JSON.
 const {VideoIndexer, ConvertTime} = require("./video-indexer");
-// const cloneDeep = require("lodash/cloneDeep"); // For deep cloning json objects
+const AWS = require("aws-sdk");
 
-/**
- * Variables declared outside the handler is cached to be reused between invocation.
- * fileContext object is preserved to use the write tokens when the proxy endpoint
- * calls the handler after video processing is done.
- */
+var s3 = new AWS.S3();
+// const cloneDeep = require("lodash/cloneDeep"); // For deep cloning json objects
 
 module.exports.handler = async (event) => {
     const parsedBody = JSON.parse(event.body);
     console.debug(parsedBody);
-    // If block after VideoIndexer finishes processing uploaded file.
+    // VideoIndexer event
     if (event && event.queryStringParameters && event.queryStringParameters.state === "Processed") {
         
-        // How many json files are in tmp dir
-        fs.readdir("/tmp", (err, items) => {
-            if (err) throw err;
-        
-            items.forEach(item => {
-                console.debug(item);
-            });
-        });
-
         console.debug(`VideoIndexer finished processing event received: ${JSON.stringify(event)}`);
 
         const videoId = event.queryStringParameters.id;
@@ -44,9 +33,19 @@ module.exports.handler = async (event) => {
         let videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
         await videoIndexer.getToken(false);
 
-        let fileContext = require(`/tmp/${requestId}.json`);
-        let skillsWriter = new SkillsWriter(fileContext);
+        let params = {
+            Bucket: "box-json-s3",
+            Key: requestId
+        }
 
+        let bucketData = await s3.getObject(params).promise();
+        console.log(bucketData);
+        let fileContext = JSON.parse(bucketData.body.toString);
+        let fileContext2 = JSON.parse(bucketData.body.toString());
+        console.log(fileContext);
+        console.log(fileContext2);
+
+        let skillsWriter = new SkillsWriter(fileContext);
 
         const indexerData = await videoIndexer.getData(videoId); // Can create skill cards after data extraction
                                                                 // This method also stores videoId for future use.
@@ -108,9 +107,14 @@ module.exports.handler = async (event) => {
         let filesReader = new FilesReader(event.body);
         let fileContext = filesReader.getFileContext();
 
-        fs.writeFile(`/tmp/${fileContext.requestId}.json`, JSON.stringify(fileContext), (err) => {
-            if (err) throw err;
-        });
+        // S3 write fileContext JSON to save tokens for later use.
+        let params = {
+            Bucket: "box-json-s3",
+            Key: fileContext.requestId,
+            Body: JSON.stringify(fileContext)
+        }
+        let s3Response = await s3.upload(params).promise()
+        console.log(s3Response);
 
         let skillsWriter = new SkillsWriter(fileContext);
         
