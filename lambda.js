@@ -22,33 +22,31 @@ const {VideoIndexer, ConvertTime} = require("./video-indexer");
  */
 
 module.exports.handler = async (event) => {
-
-    // How many json files are in tmp dir
-    fs.readdir("/tmp", (err, items) => {
-        if (err) throw err;
-    
-        items.forEach(item => {
-            console.debug(item);
-        });
-    });
-
     const parsedBody = JSON.parse(event.body);
     console.debug(parsedBody);
     // If block after VideoIndexer finishes processing uploaded file.
     if (event && event.queryStringParameters && event.queryStringParameters.state === "Processed") {
+        
+        // How many json files are in tmp dir
+        fs.readdir("/tmp", (err, items) => {
+            if (err) throw err;
+        
+            items.forEach(item => {
+                console.debug(item);
+            });
+        });
+
         console.debug(`VideoIndexer finished processing event received: ${JSON.stringify(event)}`);
 
         const videoId = event.queryStringParameters.id;
         const requestId = event.queryStringParameters.requestId;
 
         let videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
+        await videoIndexer.getToken(false);
 
         let fileContext = require(`/tmp/${requestId}.json`);
-        console.log(fileContext);
-        console.debug(fileContext);
-
-        videoIndexer.accessToken = fileContext.indexerToken;
         let skillsWriter = new SkillsWriter(fileContext);
+
 
         const indexerData = await videoIndexer.getData(videoId); // Can create skill cards after data extraction
                                                                 // This method also stores videoId for future use.
@@ -84,34 +82,31 @@ module.exports.handler = async (event) => {
         console.log(transcripts);
         cards.push(skillsWriter.createTranscriptsCard(transcripts, fileDuration));
 
-        // Faces
-        let faces = [];
-        indexerData.videos[0].insights.faces.forEach(fa => {
-            faces.push({
-                text: fa.name,
-                image_url: videoIndexer.getFace(fa.thumbnailId)
-            })
-        });
-        console.log(faces);
-        cards.push(await skillsWriter.createFacesCard(faces));
+        // Faces (sometimes there are no faces detected)
+        if (indexerData.videos[0].insights.faces) {
+            let faces = [];
+            indexerData.videos[0].insights.faces.forEach(fa => {
+                faces.push({
+                    text: fa.name,
+                    image_url: videoIndexer.getFace(fa.thumbnailId)
+                })
+            });
+            console.log(faces);
+            cards.push(await skillsWriter.createFacesCard(faces));
+        }
 
         await skillsWriter.saveDataCards(cards);
 
-        let response = {
-            statusCode: 200,
-            body: "Successfully extracted data from VideoIndexer and wrote to Box."
-        }
-        return response;
+        return;
     }
     if (parsedBody.hasOwnProperty("type") && parsedBody.type == "skill_invocation") {
         console.debug(`Box event received: ${JSON.stringify(event)}`);
         let videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
+        await videoIndexer.getToken(true);
         
         // instantiate your two skill development helper tools
         let filesReader = new FilesReader(event.body);
         let fileContext = filesReader.getFileContext();
-        await videoIndexer.getToken();
-        fileContext.indexerToken = videoIndexer.accessToken;
 
         fs.writeFile(`/tmp/${fileContext.requestId}.json`, JSON.stringify(fileContext), (err) => {
             if (err) throw err;
@@ -125,21 +120,13 @@ module.exports.handler = async (event) => {
         await videoIndexer.upload(fileContext.fileName, fileContext.requestId, fileContext.fileDownloadURL); // Will POST a success when it's done indexing.
         console.debug("video sent to VI");
 
-        let response = {
-            statusCode: 200,
-            body: "Box skill upload event processed."
-        };
-
         console.debug("returning response to box");
-        return response;
+        return {statusCode: 200};
     }
     else {
         console.debug("Unknown request");
         console.debug(event);
-        let response = {
-            statusCode: 400,
-            body: "Unknown request"
-        };
-        return response;
+
+        return {statusCode: 400, body: "Unknown Request"};
     }
 };

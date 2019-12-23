@@ -26,7 +26,7 @@ VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
     let callback = this.apiGateway + "?requestId=" + requestId;
     const options = {
         host: this.hostname,
-        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}&privacy=Private&callbackUrl=${callback}&language=multi&videoUrl=${fileUrl}`,
+        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}&privacy=Private&language=multi&callbackUrl=${callback}&videoUrl=${fileUrl}`,
         method: "POST",
         headers: {
             "Authorization": `Bearer ${this.accessToken}`
@@ -64,7 +64,8 @@ VideoIndexer.prototype.getData = async function (videoId) {
         host: this.hostname,
         path: `/${this.location}/Accounts/${this.accountId}/Videos/${videoId}/Index`,
         headers: {
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "Authorization": `Bearer ${this.accessToken}`
         }
     }
 
@@ -107,13 +108,12 @@ VideoIndexer.prototype.getFace = function (id) {
  * If the uploaded video is listed "private", then you'll need a subscription key
  * to request an authorization token.
  */
-VideoIndexer.prototype.getToken = async function () {
+VideoIndexer.prototype.getToken = async function (allowEdit) {
     const options = {
         host: this.hostname,
-        path: `/auth/${this.location}/Accounts/${this.accountId}/AccessToken?allowEdit=true`,
+        path: `/auth/${this.location}/Accounts/${this.accountId}/AccessToken?allowEdit=${allowEdit}`,
         headers: {
-            "Ocp-Apim-Subscription-Key": this.authKey,
-            "Authorization": `Bearer ${this.accessToken}`
+            "Ocp-Apim-Subscription-Key": this.authKey
         }
     };
 
