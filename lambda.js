@@ -22,6 +22,8 @@ const {VideoIndexer, ConvertTime} = require("./video-indexer");
  */
 
 module.exports.handler = async (event) => {
+    const parsedBody = JSON.parse(event.body);
+    console.debug(parsedBody);
     // If block after VideoIndexer finishes processing uploaded file.
     if (event && event.queryStringParameters && event.queryStringParameters.state === "Processed") {
         console.debug(`VideoIndexer finished processing event received: ${JSON.stringify(event)}`);
@@ -89,7 +91,7 @@ module.exports.handler = async (event) => {
         }
         return response;
     }
-    else {
+    if (parsedBody.hasOwnProperty("type") && parsedBody.type == "skill_invocation") {
         console.debug(`Box event received: ${JSON.stringify(event)}`);
         let videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
         
@@ -114,6 +116,15 @@ module.exports.handler = async (event) => {
             body: "Box skill upload event processed."
         };
 
+        return response;
+    }
+    else {
+        console.debug("Unknown request");
+        console.debug(event);
+        let response = {
+            statusCode: 400,
+            body: "Unknown request"
+        };
         return response;
     }
 };

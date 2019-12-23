@@ -26,7 +26,7 @@ VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
     let callback = this.apiGateway + "?requestId=" + requestId;
     const options = {
         host: this.hostname,
-        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}&privacy=Public&callbackUrl=${callback}&videoUrl=${fileUrl}&accessToken=${this.accessToken}`,
+        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}&privacy=Private&callbackUrl=${callback}&language=multi&videoUrl=${fileUrl}&accessToken=${this.accessToken}`,
         method: "POST",
         // headers: {
             //     "Authorization": `Bearer%20${this.accessToken}`
