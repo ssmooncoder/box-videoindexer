@@ -20,6 +20,9 @@ function VideoIndexer(apiGateway) {
 /**
  * Uploaded video is public for testing purposes. Change this flag to "Private" to use
  * authentication tokens.
+ * 
+ * Called twice bug
+ * https://www.codereadability.com/preventing-a-callback-from-accidentally-being-called-twice/
  * https://api-portal.videoindexer.ai/docs/services/Operations/operations/Upload-Video?
  */
 VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
@@ -42,6 +45,7 @@ VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
 
             if (result.statusCode === 200) {
                 resolve("Success: Upload Video");
+                return;
             }
         });
 
@@ -82,6 +86,7 @@ VideoIndexer.prototype.getData = async function (videoId) {
             result.on("end", () => {
                 data = JSON.parse(Buffer.concat(data));
                 resolve(data);
+                return;
             });
 
         });
@@ -135,6 +140,7 @@ VideoIndexer.prototype.getToken = async function (allowEdit) {
                 this.accessToken = data;
                 console.log(this.accessToken);
                 resolve("Success: Authorization Token");
+                return;
             });
     
         })

@@ -20,8 +20,7 @@ var s3 = new AWS.S3();
 // const cloneDeep = require("lodash/cloneDeep"); // For deep cloning json objects
 
 module.exports.handler = async (event) => {
-    const parsedBody = JSON.parse(event.body);
-    console.debug(parsedBody);
+    
     // VideoIndexer event
     if (event && event.queryStringParameters && event.queryStringParameters.state === "Processed") {
         
@@ -98,6 +97,10 @@ module.exports.handler = async (event) => {
 
         return;
     }
+
+    let parsedBody = JSON.parse(event.body);
+    console.log(parsedBody);
+
     if (parsedBody.hasOwnProperty("type") && parsedBody.type == "skill_invocation") {
         console.debug(`Box event received: ${JSON.stringify(event)}`);
         let videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
@@ -129,7 +132,7 @@ module.exports.handler = async (event) => {
     }
     else {
         console.debug("Unknown request");
-        console.debug(event);
+        console.log(event);
 
         return {statusCode: 400, body: "Unknown Request"};
     }
