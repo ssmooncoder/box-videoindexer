@@ -41,8 +41,9 @@ module.exports.handler = async (event) => {
         console.log(bucketData);
 
         // "Body" is capital "B", not lowercase like "body".
-        let fileContext = bucketData.Body.toString();
+        let fileContext = JSON.parse(bucketData.Body.toString());
         console.log(fileContext);
+        console.log(fileContext.fileWriteToken);
 
         let skillsWriter = new SkillsWriter(fileContext);
 
@@ -56,26 +57,31 @@ module.exports.handler = async (event) => {
         // Keywords
         let keywords = [];
         indexerData.summarizedInsights.keywords.forEach(kw => {
-            keywords.push({
-                text: kw.name,
-                appears: kw.appearances.map(time => {
-                    return {start: time.startSeconds, end: time.endSeconds};
-                    // return {start: time.startSeconds, end: time.endSeconds};
+            if (kw.name.trim()) {
+                keywords.push({
+                    text: kw.name,
+                    appears: kw.appearances.map(time => {
+                        return {start: time.startSeconds, end: time.endSeconds};
+                        // return {start: time.startSeconds, end: time.endSeconds};
+                    })
                 })
-            })
+            }
         });
         console.log(keywords);
         cards.push(skillsWriter.createTopicsCard(keywords, fileDuration));
 
-        // Transcripts
+        // Transcripts (sometimes text is empty string such as "")
         let transcripts = [];
         indexerData.videos[0].insights.transcript.forEach(tr => {
-            transcripts.push({
-                text: tr.text,
-                appears: tr.instances.map(time => {
-                    return {start: ConvertTime(time.start), end: ConvertTime(time.end)};
+            // Check if empty or whitespace
+            if (tr.text.trim()) {
+                transcripts.push({
+                    text: tr.text,
+                    appears: tr.instances.map(time => {
+                        return {start: ConvertTime(time.start), end: ConvertTime(time.end)};
+                    })
                 })
-            })
+            }
         })
         console.log(transcripts);
         cards.push(skillsWriter.createTranscriptsCard(transcripts, fileDuration));

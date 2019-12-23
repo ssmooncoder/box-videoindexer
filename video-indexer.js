@@ -21,11 +21,10 @@ function VideoIndexer(apiGateway) {
  * Uploaded video is public for testing purposes. Change this flag to "Private" to use
  * authentication tokens.
  * 
- * Called twice bug
- * https://www.codereadability.com/preventing-a-callback-from-accidentally-being-called-twice/
+ * Removed "async" from function prototype as there are no awaits within the scope.
  * https://api-portal.videoindexer.ai/docs/services/Operations/operations/Upload-Video?
  */
-VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
+VideoIndexer.prototype.upload = function (fileName, requestId, fileUrl) {
     let callback = this.apiGateway + "?requestId=" + requestId;
     const options = {
         host: this.hostname,
@@ -40,12 +39,11 @@ VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
     return new Promise((resolve, reject) => {
 
         const request = https.request(options, (result) => {
-            console.log('statusCode:', result.statusCode);
-            console.log('headers:', result.headers);
+            console.log('statusCode upload:', result.statusCode);
+            console.log('headers upload:', result.headers);
 
             if (result.statusCode === 200) {
                 resolve("Success: Upload Video");
-                return;
             }
         });
 
@@ -62,7 +60,7 @@ VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
 /**
  * Access token will be required for private videos.
  */
-VideoIndexer.prototype.getData = async function (videoId) {
+VideoIndexer.prototype.getData = function (videoId) {
     VideoIndexer.prototype.videoId = videoId; // Add as property for face thumbnail images
     const options = {
         host: this.hostname,
@@ -86,7 +84,6 @@ VideoIndexer.prototype.getData = async function (videoId) {
             result.on("end", () => {
                 data = JSON.parse(Buffer.concat(data));
                 resolve(data);
-                return;
             });
 
         });
@@ -113,7 +110,7 @@ VideoIndexer.prototype.getFace = function (id) {
  * If the uploaded video is listed "private", then you'll need a subscription key
  * to request an authorization token.
  */
-VideoIndexer.prototype.getToken = async function (allowEdit) {
+VideoIndexer.prototype.getToken = function (allowEdit) {
     const options = {
         host: this.hostname,
         path: `/auth/${this.location}/Accounts/${this.accountId}/AccessToken?allowEdit=${allowEdit}`,
@@ -140,7 +137,6 @@ VideoIndexer.prototype.getToken = async function (allowEdit) {
                 this.accessToken = data;
                 console.log(this.accessToken);
                 resolve("Success: Authorization Token");
-                return;
             });
     
         })
