@@ -10,7 +10,8 @@
  */
 
 'use strict';
-const { FilesReader, SkillsWriter, SkillsErrorEnum } = require('./skills-kit-2.0');
+const { FilesReader, SkillsWriter, SkillsErrorEnum } = require("./skills-kit-2.0");
+const fs = require("fs");
 const {VideoIndexer, ConvertTime} = require("./video-indexer");
 // const cloneDeep = require("lodash/cloneDeep"); // For deep cloning json objects
 
@@ -19,17 +20,22 @@ const {VideoIndexer, ConvertTime} = require("./video-indexer");
  * fileContext object is preserved to use the write tokens when the proxy endpoint
  * calls the handler after video processing is done.
  */
-let fileContext;
-let filesReader;
-let skillsWriter;
-let videoIndexer;
 
-module.exports.handler = async (event, context, callback) => {
+module.exports.handler = async (event) => {
     // If block after VideoIndexer finishes processing uploaded file.
     if (event && event.queryStringParameters && event.queryStringParameters.state === "Processed") {
         console.debug(`VideoIndexer finished processing event received: ${JSON.stringify(event)}`);
 
         const videoId = event.queryStringParameters.id;
+        const requestId = event.queryStringParameters.requestId;
+
+        let videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
+
+        let fileContext = JSON.parse(fs.readFile(`/tmp/${requestId}.json`));
+
+        videoIndexer.accessToken = fileContext.indexerToken;
+        let skillsWriter = new SkillsWriter(fileContext);
+
         const indexerData = await videoIndexer.getData(videoId); // Can create skill cards after data extraction
                                                                 // This method also stores videoId for future use.
 
@@ -76,20 +82,38 @@ module.exports.handler = async (event, context, callback) => {
         cards.push(await skillsWriter.createFacesCard(faces));
 
         await skillsWriter.saveDataCards(cards);
-        callback(null, { statusCode: 200, body: "Box skill metadata finished writing." });
+
+        let response = {
+            statusCode: 200,
+            body: "Successfully extracted data from VideoIndexer and wrote to Box."
+        }
+        return response;
     }
     else {
         console.debug(`Box event received: ${JSON.stringify(event)}`);
-        videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
-    
+        let videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
+        
         // instantiate your two skill development helper tools
-        filesReader = new FilesReader(event.body);
-        fileContext = filesReader.getFileContext();
-        skillsWriter = new SkillsWriter(fileContext);
+        let filesReader = new FilesReader(event.body);
+        let fileContext = filesReader.getFileContext();
+        await videoIndexer.getToken();
+        fileContext.indexerToken = videoIndexer.accessToken;
+
+        fs.writeFile(`/tmp/${fileContext.requestId}.json`, JSON.stringify(fileContext), (err) => {
+            if (err) throw err;
+        });
+
+        let skillsWriter = new SkillsWriter(fileContext);
         
         await skillsWriter.saveProcessingCard();
     
-        await videoIndexer.getToken();
-        await videoIndexer.upload(filesReader.fileName, filesReader.fileDownloadURL); // Will POST a success when it's done indexing.
+        await videoIndexer.upload(fileContext.fileName, fileContext.requestId, fileContext.fileDownloadURL); // Will POST a success when it's done indexing.
+
+        let response = {
+            statusCode: 200,
+            body: "Box skill upload event processed."
+        };
+
+        return response;
     }
 };

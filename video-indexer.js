@@ -22,10 +22,11 @@ function VideoIndexer(apiGateway) {
  * authentication tokens.
  * https://api-portal.videoindexer.ai/docs/services/Operations/operations/Upload-Video?
  */
-VideoIndexer.prototype.upload = async function (fileName, fileUrl) {
+VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
+    let callback = this.apiGateway + "?requestId=" + requestId;
     const options = {
         host: this.hostname,
-        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}&privacy=Public&callbackUrl=${this.apiGateway}&videoUrl=${fileUrl}&accessToken=${this.accessToken}`,
+        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}&privacy=Public&callbackUrl=${callback}&videoUrl=${fileUrl}&accessToken=${this.accessToken}`,
         method: "POST",
         // headers: {
             //     "Authorization": `Bearer%20${this.accessToken}`
