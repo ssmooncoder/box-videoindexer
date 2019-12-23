@@ -33,8 +33,8 @@ VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
             // }
         };
 
+    console.debug("before upload video:\n" + this.accessToken);
     return new Promise((resolve, reject) => {
-        console.log(this.accessToken);
 
         const request = https.request(options, (result) => {
             console.log('statusCode:', result.statusCode);

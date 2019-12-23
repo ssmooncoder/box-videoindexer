@@ -11,7 +11,7 @@
 
 'use strict';
 const { FilesReader, SkillsWriter, SkillsErrorEnum } = require("./skills-kit-2.0");
-const fs = require("fs");
+const fs = require("fs"); // Only for writing JSON files. Use "require()" to read JSON.
 const {VideoIndexer, ConvertTime} = require("./video-indexer");
 // const cloneDeep = require("lodash/cloneDeep"); // For deep cloning json objects
 
@@ -22,6 +22,16 @@ const {VideoIndexer, ConvertTime} = require("./video-indexer");
  */
 
 module.exports.handler = async (event) => {
+
+    // How many json files are in tmp dir
+    fs.readdir("/tmp", (err, items) => {
+        if (err) throw err;
+    
+        items.forEach(item => {
+            console.debug(item);
+        });
+    });
+
     const parsedBody = JSON.parse(event.body);
     console.debug(parsedBody);
     // If block after VideoIndexer finishes processing uploaded file.
@@ -33,7 +43,8 @@ module.exports.handler = async (event) => {
 
         let videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
 
-        let fileContext = JSON.parse(fs.readFile(`/tmp/${requestId}.json`));
+        let fileContext = require(`/tmp/${requestId}.json`);
+        console.debug(fileContext);
 
         videoIndexer.accessToken = fileContext.indexerToken;
         let skillsWriter = new SkillsWriter(fileContext);
@@ -109,13 +120,16 @@ module.exports.handler = async (event) => {
         
         await skillsWriter.saveProcessingCard();
     
+        console.debug("sending video to VI");
         await videoIndexer.upload(fileContext.fileName, fileContext.requestId, fileContext.fileDownloadURL); // Will POST a success when it's done indexing.
+        console.debug("video sent to VI");
 
         let response = {
             statusCode: 200,
             body: "Box skill upload event processed."
         };
 
+        console.debug("returning response to box");
         return response;
     }
     else {
