@@ -26,12 +26,12 @@ VideoIndexer.prototype.upload = async function (fileName, requestId, fileUrl) {
     let callback = this.apiGateway + "?requestId=" + requestId;
     const options = {
         host: this.hostname,
-        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}&privacy=Private&callbackUrl=${callback}&language=multi&videoUrl=${fileUrl}&accessToken=${this.accessToken}`,
+        path: `/${this.location}/Accounts/${this.accountId}/Videos?name=${fileName}&privacy=Private&callbackUrl=${callback}&language=multi&videoUrl=${fileUrl}`,
         method: "POST",
-        // headers: {
-            //     "Authorization": `Bearer%20${this.accessToken}`
-            // }
-        };
+        headers: {
+            "Authorization": `Bearer ${this.accessToken}`
+        }
+    };
 
     console.debug("before upload video:\n" + this.accessToken);
     return new Promise((resolve, reject) => {
@@ -112,7 +112,8 @@ VideoIndexer.prototype.getToken = async function () {
         host: this.hostname,
         path: `/auth/${this.location}/Accounts/${this.accountId}/AccessToken?allowEdit=true`,
         headers: {
-            "Ocp-Apim-Subscription-Key": this.authKey
+            "Ocp-Apim-Subscription-Key": this.authKey,
+            "Authorization": `Bearer ${this.accessToken}`
         }
     };
 

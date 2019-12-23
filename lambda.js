@@ -44,6 +44,7 @@ module.exports.handler = async (event) => {
         let videoIndexer = new VideoIndexer(process.env.APIGATEWAY); // Initialized with callback endpoint
 
         let fileContext = require(`/tmp/${requestId}.json`);
+        console.log(fileContext);
         console.debug(fileContext);
 
         videoIndexer.accessToken = fileContext.indexerToken;
