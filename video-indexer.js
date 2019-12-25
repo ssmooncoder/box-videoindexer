@@ -100,10 +100,9 @@ VideoIndexer.prototype.getData = function (videoId) {
 /**
  * Builds the URI for thumbnails stored on VideoIndexer
  * No async because we already have the thumbnail IDs locally.
- * Need to implement tokens for private videos
  */
 VideoIndexer.prototype.getFace = function (id) {
-    return `https://api.videoindexer.ai/${this.location}/Accounts/${this.accountId}/Videos/${this.videoId}/Thumbnails/${id}`;
+    return `https://api.videoindexer.ai/${this.location}/Accounts/${this.accountId}/Videos/${this.videoId}/Thumbnails/${id}?accessToken=${this.accessToken}`;
 }
 
 /**
