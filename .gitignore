@@ -4,3 +4,6 @@ node_modules/
 out
 .DS_Store
 _test.js
+danny_config.json
+danny_Testing.js
+danny_TestingWithoutSDK.js
