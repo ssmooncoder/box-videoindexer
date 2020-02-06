@@ -15,6 +15,7 @@
 const { FilesReader, SkillsWriter, SkillsErrorEnum } = require("./skills-kit-2.0");
 const {VideoIndexer, ConvertTime} = require("./video-indexer");
 const AWS = require("aws-sdk");
+const {getCustomToken} = require("./get-jwt-token");    // Testing if jwt works with skill
 
 var s3 = new AWS.S3();
 // const cloneDeep = require("lodash/cloneDeep"); // For deep cloning json objects
@@ -42,8 +43,13 @@ module.exports.handler = async (event) => {
 
         // "Body" is capital "B", not lowercase like "body".
         let fileContext = JSON.parse(bucketData.Body.toString());
+
+        // let JWTToken = await getCustomToken();
+        // console.log("Custom JWT Token: " + JWTToken);
         console.log(fileContext);
-        console.log(fileContext.fileWriteToken);
+        // console.log("Before: " + fileContext.fileWriteToken);
+        // fileContext.fileWriteToken = JWTToken;
+        // console.log("After: " + fileContext.fileWriteToken);
 
         let skillsWriter = new SkillsWriter(fileContext);
 

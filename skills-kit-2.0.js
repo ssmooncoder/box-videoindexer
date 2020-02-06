@@ -26,10 +26,14 @@ const SKILLS_SERVICE_TYPE = 'service';
 const SKILLS_METADATA_CARD_TYPE = 'skill_card';
 const SKILLS_METADATA_INVOCATION_TYPE = 'skill_invocation';
 
-const sdk = new BoxSDK({
-    clientID: 'BoxSkillsClientId',
-    clientSecret: 'BoxSkillsClientSecret'
-});
+/* Try JWT Token instead */
+// const sdk = new BoxSDK({
+//     clientID: 'BoxSkillsClientId',
+//     clientSecret: 'BoxSkillsClientSecret'
+// });
+const config = require("./config.json");
+const sdk = BoxSDK.getPreconfiguredInstance(config);
+
 
 const BOX_API_ENDPOINT = 'https://api.box.com/2.0';
 const MB_INTO_BYTES = 1048576;
@@ -138,7 +142,8 @@ function FilesReader(body) {
     this.fileType = getFileType(this.fileFormat);
     this.fileReadToken = eventBody.token.read.access_token;
     this.fileWriteToken = eventBody.token.write.access_token;
-    this.fileReadClient = sdk.getBasicClient(this.fileReadToken);
+    // this.fileReadClient = sdk.getBasicClient(this.fileReadToken);
+    this.fileReadClient = sdk.getAppAuthClient("user", "9950630925");
     this.fileDownloadURL = `${BOX_API_ENDPOINT}/files/${this.fileId}/content?access_token=${this.fileReadToken}`;
 }
 
@@ -159,7 +164,8 @@ function SkillsWriter(fileContext) {
     this.requestId = fileContext.requestId;
     this.skillId = fileContext.skillId;
     this.fileId = fileContext.fileId;
-    this.fileWriteClient = sdk.getBasicClient(fileContext.fileWriteToken);
+    // this.fileWriteClient = sdk.getBasicClient(fileContext.fileWriteToken);
+    this.fileWriteClient = sdk.getAppAuthClient("user", "9950630925");
 }
 
 /** FilesReader private functions */

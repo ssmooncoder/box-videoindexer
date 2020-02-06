@@ -4,6 +4,7 @@
   "main": "index.js",
   "dependencies": {
     "aws-sdk": "^2.595.0",
+    "axios": "^0.19.2",
     "box-node-sdk": "^1.30.0",
     "express": "^4.17.1",
     "jest": "^24.9.0",
@@ -15,7 +16,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "rm function.zip && zip function.zip * -i lambda.js package.json package-lock.json skills-kit-2.0.js video-indexer.js && aws lambda update-function-code --function-name my-function --zip-file fileb://function.zip",
+    "deploy": "rm function.zip && zip function.zip * -i lambda.js package.json package-lock.json skills-kit-2.0.js video-indexer.js config.json get-jwt-token.js && aws lambda update-function-code --function-name my-function --zip-file fileb://function.zip",
     "invoke": "aws lambda invoke --function-name my-function invoke_response --log-type Tail --query 'LogResult' --output text | base64 -D"
   },
   "author": "",
