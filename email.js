@@ -13,7 +13,7 @@ function sendErrorEmail(e) {
         from: process.env.FROM_EMAIL,
         to: process.env.TO_EMAIL,
         subject: `${e}`,
-        text: `An error occurred during the transcription attempt.\n\n${JSON.stringify(e)}`
+        text: `An error occurred during the transcription attempt.\n\nStack trace:\n${e.stack}\n\n${JSON.stringify(e)}`
     };
     
     transporter.sendMail(mailOptions, function (error, info) {
