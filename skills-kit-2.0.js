@@ -138,6 +138,8 @@ function FilesReader(body) {
     this.fileType = getFileType(this.fileFormat);
     this.fileReadToken = eventBody.token.read.access_token;
     this.fileWriteToken = eventBody.token.write.access_token;
+    // this.fileReadToken = "blahblah";
+    // this.fileWriteToken = "blahblah";
     this.fileReadClient = sdk.getBasicClient(this.fileReadToken);
     this.fileDownloadURL = `${BOX_API_ENDPOINT}/files/${this.fileId}/content?access_token=${this.fileReadToken}`;
 }
