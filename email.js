@@ -4,14 +4,14 @@ function sendErrorEmail(e) {
     let transporter = nodemailer.createTransport({
         service: 'outlook',
         auth: {
-            user: 'smoon2@calstatela.edu',
-            pass: 'Zmkozmko2'
+            user: process.env.FROM_EMAIL,
+            pass: process.env.FROM_EMAIL_PASS
         }
     });
     
     let mailOptions = {
-        from: 'smoon2@calstatela.edu',
-        to: 'samuelmoon0712@gmail.com',
+        from: process.env.FROM_EMAIL,
+        to: process.env.TO_EMAIL,
         subject: `${e}`,
         text: `An error occurred during the transcription attempt.\n\n${JSON.stringify(e)}`
     };
